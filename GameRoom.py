@@ -1,5 +1,7 @@
 from Board import Board
 from cypher import encrypt, decrypt
+from datetime import datetime
+import os
 
 class GameRoom:
     def __init__(self, player1_socket, player2_socket):
@@ -40,12 +42,39 @@ class GameRoom:
                 for player_socket, _ in self.players:
                     player_socket.send(encrypt(self.board.display() + "\n" + msg))
                 game_over = True
+                self.save_game_result(msg)
             elif self.board.is_draw():
                 msg = "It's a draw!"
                 for player_socket, _ in self.players:
                     player_socket.send(encrypt(self.board.display() + "\n" + msg))
                 game_over = True
+                self.save_game_result(msg)
             else:
                 self.current_player = (self.current_player + 1) % 2
 
         # Optionally, close sockets here if you want to end the session
+
+    def save_game_result(self, result):
+        # Get current time
+        game_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Get player IP addresses
+        player1_ip = self.players[0][0].getpeername()[0]
+        player2_ip = self.players[1][0].getpeername()[0]
+        
+        # Get final board state
+        board_state = self.board.display()
+        
+        # Prepare log entry
+        log_entry = (
+            f"Game Time: {game_time}\n"
+            f"Player X IP: {player1_ip}\n"
+            f"Player O IP: {player2_ip}\n"
+            f"Result: {result}\n"
+            f"Final Board:\n{board_state}\n"
+            f"{'-' * 50}\n"
+        )
+        
+        # Append to log file
+        with open("game_log.txt", "a") as f:
+            f.write(log_entry)
