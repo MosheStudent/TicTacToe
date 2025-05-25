@@ -50,12 +50,8 @@ class GameRoom:
                 opponent_socket, _ = self.players[(self.current_player + 1) % 2]
 
                 self.send_board_to_players()
-                # Send "Your Move" prompt
-                try:
-                    current_socket.send(bytes(encrypt("Your Move: ", self.player_public_keys[self.current_player]), "utf-8"))
-                except Exception as e:
-                    print(f"Error sending move prompt: {e}")
-                    break
+                # Only send "Your Move" to the current player
+                current_socket.send(bytes(encrypt("Your Move:", self.player_public_keys[self.current_player]), "utf-8"))
 
                 # Receive and decrypt move
                 try:
