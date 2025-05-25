@@ -58,7 +58,8 @@ class NetworkTicTacToeGUI:
                 if board[i] in ["x", "o"]:
                     self.buttons[i].config(text=board[i].upper(), state="disabled")
                 else:
-                    self.buttons[i].config(text="", state="normal")
+                    self.buttons[i].config(text="", state="disabled")  # Always start as disabled
+
         # Check for turn or game over
         if "Your Move" in data:
             self.my_turn = True
@@ -68,9 +69,8 @@ class NetworkTicTacToeGUI:
                     self.buttons[i].config(state="normal")
         else:
             self.my_turn = False
-            # Disable all buttons
-            for btn in self.buttons:
-                btn.config(state="disabled")
+            # All buttons already disabled above
+
         if result_message:
             messagebox.showinfo("Game Over", result_message)
             self.root.destroy()
