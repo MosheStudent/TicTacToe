@@ -1,5 +1,5 @@
 import socket
-from secure_crypto import encrypt_message, decrypt_message, generate_aes_key, encrypt_aes_key, load_server_public_key
+from cypher import encrypt, decrypt
 
 class TicTacToeClient:
     def __init__(self, server_ip):
@@ -8,13 +8,13 @@ class TicTacToeClient:
 
     def start(self):
         while True:
-            board_state = decrypt_message(self.client_socket.recv(1024).decode())
+            board_state = decrypt(self.client_socket.recv(1024).decode())
             print(board_state)
 
             if "wins" in board_state or "draw" in board_state:
                 break
 
             move = input("Enter your move (1-9): ")
-            self.client_socket.send(bytes(encrypt_message(move), "utf-8"))
+            self.client_socket.send(bytes(encrypt(move), "utf-8"))
 
 

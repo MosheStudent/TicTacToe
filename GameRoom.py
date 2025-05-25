@@ -1,5 +1,6 @@
 from Board import Board
-from secure_crypto import encrypt_message, decrypt_message, decrypt_aes_key, load_server_private_key
+from cypher import encrypt, decrypt
+
 
 class GameRoom:
     def __init__(self, player1_socket, player2_socket):
@@ -11,7 +12,7 @@ class GameRoom:
         board_state = self.board.display()
 
         for player_socket, _ in self.players:
-            player_socket.send(bytes(encrypt_message(board_state), "utf-8"))
+            player_socket.send(bytes(encrypt(board_state), "utf-8"))
 
     def handle_game(self):
         game_over = False
@@ -21,8 +22,8 @@ class GameRoom:
             opponent_socket, _ = self.players[(self.current_player + 1) % 2]
 
             self.send_board_to_players()
-            current_socket.send(bytes(encrypt_message("Your Move: "), "utf-8"))
-            move = decrypt_message(current_socket.recv(1024).decode("utf-8"))
+            current_socket.send(bytes(encrypt("Your Move: "), "utf-8"))
+            move = decrypt(current_socket.recv(1024).decode("utf-8"))
 
             # Validate move
             try:
@@ -38,14 +39,22 @@ class GameRoom:
             if self.board.is_winner(current_marker):
                 msg = f"Player {current_marker.upper()} Wins!"
                 for player_socket, _ in self.players:
-                    player_socket.send(bytes(encrypt_message(self.board.display() + "\n" + msg), "utf-8"))
+                    player_socket.send(bytes(encrypt(self.board.display() + "\n" + msg), "utf-8"))
                 game_over = True
             elif self.board.is_draw():
                 msg = "It's a draw!"
                 for player_socket, _ in self.players:
-                    player_socket.send(bytes(encrypt_message(self.board.display() + "\n" + msg), "utf-8"))
+                    player_socket.send(bytes(encrypt(self.board.display() + "\n" + msg), "utf-8"))
                 game_over = True
             else:
                 self.current_player = (self.current_player + 1) % 2
 
         # Optionally, close sockets here if you want to end the session
+
+        with open("game_log.txt", "a") as log_file:
+            log_file.write(self.board.display() + "\n")
+            if game_over:
+                log_file.write(msg + "\n")
+            log_file.write("-" * 20 + "\n")
+        print("Game over. Log saved to game_log.txt")
+            

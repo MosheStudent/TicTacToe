@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 import threading
 from TicTacToeClient import TicTacToeClient
-from secure_crypto import encrypt_message, decrypt_message, generate_aes_key, encrypt_aes_key, load_server_public_key
+from cypher import encrypt, decrypt
 
 class NetworkTicTacToeGUI:
     def __init__(self, root, server_ip):
@@ -23,7 +23,7 @@ class NetworkTicTacToeGUI:
 
     def send_move(self, idx):
         if self.my_turn and self.buttons[idx]['text'] == "":
-            self.client.client_socket.send(bytes(encrypt_message(str(idx+1)), "utf-8"))
+            self.client.client_socket.send(bytes(encrypt(str(idx+1)), "utf-8"))
             self.my_turn = False
 
     def listen_to_server(self):
@@ -35,7 +35,7 @@ class NetworkTicTacToeGUI:
                     if game_over:
                         break
                     continue
-                data = decrypt_message(data)
+                data = decrypt(data)
                 if ("Wins" in data or "draw" in data or "Draw" in data) and not game_over:
                     game_over = True
                 self.root.after(0, self.update_board, data)
@@ -79,7 +79,17 @@ class NetworkTicTacToeGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    server_ip = simpledialog.askstring("Server IP", "Enter server IP address:", parent=root)
+
+    try:
+        server_ip = simpledialog.askstring("Server IP", "Enter server IP address:", parent=root)
+        
+        if server_ip is None:
+            messagebox.showinfo("Cancelled", "User cancelled input.")
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to get server IP: {e}")
+
+
     if server_ip:
         app = NetworkTicTacToeGUI(root, server_ip)
         root.mainloop()
