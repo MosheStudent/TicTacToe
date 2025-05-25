@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 import threading
 from TicTacToeClient import TicTacToeClient
-from cypher import encrypt, decrypt
+from cypher import generate_keys, encrypt, decrypt
 
 class NetworkTicTacToeGUI:
     def __init__(self, root, server_ip):
@@ -10,7 +10,14 @@ class NetworkTicTacToeGUI:
         self.root.title("Tic Tac Toe (Network)")
         self.buttons = []
         self.my_turn = False
-        self.client = TicTacToeClient(server_ip)
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect((server_ip, 12345))
+
+        # Generate key pair
+        self.private_key, self.public_key = generate_keys()
+        self.client_socket.send(self.public_key)
+        self.server_public_key = self.client_socket.recv(4096)
+
         self.create_widgets()
         threading.Thread(target=self.listen_to_server, daemon=True).start()
 
@@ -23,19 +30,19 @@ class NetworkTicTacToeGUI:
 
     def send_move(self, idx):
         if self.my_turn and self.buttons[idx]['text'] == "":
-            self.client.client_socket.send(bytes(encrypt(str(idx+1)), "utf-8"))
+            self.client_socket.send(bytes(encrypt(str(idx+1), self.server_public_key), "utf-8"))
             self.my_turn = False
 
     def listen_to_server(self):
         game_over = False
         while True:
             try:
-                data = self.client.client_socket.recv(1024).decode()
+                data = self.client_socket.recv(4096).decode()
                 if not data:
                     if game_over:
                         break
                     continue
-                data = decrypt(data)
+                data = decrypt(data, self.private_key)
                 if ("Wins" in data or "draw" in data or "Draw" in data) and not game_over:
                     game_over = True
                 self.root.after(0, self.update_board, data)
