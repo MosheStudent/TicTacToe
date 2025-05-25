@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 import threading
 from TicTacToeClient import TicTacToeClient
+from cypher import encrypt, decrypt
 
 class NetworkTicTacToeGUI:
     def __init__(self, root, server_ip):
@@ -22,24 +23,23 @@ class NetworkTicTacToeGUI:
 
     def send_move(self, idx):
         if self.my_turn and self.buttons[idx]['text'] == "":
-            self.client.send(str(idx+1))
+            self.client.client_socket.send(bytes(encrypt(str(idx+1)), "utf-8"))
             self.my_turn = False
 
     def listen_to_server(self):
         game_over = False
         while True:
             try:
-                data = self.client.receive()
+                data = self.client.client_socket.recv(1024).decode()
                 if not data:
                     if game_over:
                         break
                     continue
+                data = decrypt(data)
                 if ("Wins" in data or "draw" in data or "Draw" in data) and not game_over:
                     game_over = True
                 self.root.after(0, self.update_board, data)
             except Exception:
-                messagebox.showerror("Connection Lost", "Lost connection to the server.")
-                self.root.destroy()
                 break
 
     def update_board(self, data):
@@ -56,21 +56,14 @@ class NetworkTicTacToeGUI:
         if len(board) == 9:
             for i in range(9):
                 if board[i] in ["x", "o"]:
-                    self.buttons[i].config(text=board[i].upper(), state="disabled")
+                    self.buttons[i].config(text=board[i].upper())
                 else:
-                    self.buttons[i].config(text="", state="normal" if not self.my_turn else "normal")  # Always start as disabled
-
+                    self.buttons[i].config(text="")
         # Check for turn or game over
         if "Your Move" in data:
             self.my_turn = True
-            # Enable only empty buttons
-            for i in range(9):
-                if self.buttons[i]['text'] == "":
-                    self.buttons[i].config(state="normal")
         else:
             self.my_turn = False
-            # All buttons already disabled above
-
         if result_message:
             messagebox.showinfo("Game Over", result_message)
             self.root.destroy()
@@ -88,9 +81,5 @@ if __name__ == "__main__":
     root = tk.Tk()
     server_ip = simpledialog.askstring("Server IP", "Enter server IP address:", parent=root)
     if server_ip:
-        try:
-            app = NetworkTicTacToeGUI(root, server_ip)
-            root.mainloop()
-        except Exception as e:
-            messagebox.showerror("Connection Error", f"Could not connect to server:\n{e}")
-            root.destroy()
+        app = NetworkTicTacToeGUI(root, server_ip)
+        root.mainloop()
