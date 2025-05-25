@@ -38,6 +38,8 @@ class NetworkTicTacToeGUI:
                     game_over = True
                 self.root.after(0, self.update_board, data)
             except Exception:
+                messagebox.showerror("Connection Lost", "Lost connection to the server.")
+                self.root.destroy()
                 break
 
     def update_board(self, data):

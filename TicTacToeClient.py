@@ -5,14 +5,8 @@ class TicTacToeClient:
     def __init__(self, server_ip):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect((server_ip, 12345))
-
-        # Generate key pair
         self.private_key, self.public_key = generate_keys()
-
-        # Exchange public keys
-        # Send our public key
         self.client_socket.send(self.public_key)
-        # Receive server's public key
         self.server_public_key = self.client_socket.recv(4096)
 
     def send(self, text):
