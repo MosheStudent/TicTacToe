@@ -56,14 +56,21 @@ class NetworkTicTacToeGUI:
         if len(board) == 9:
             for i in range(9):
                 if board[i] in ["x", "o"]:
-                    self.buttons[i].config(text=board[i].upper())
+                    self.buttons[i].config(text=board[i].upper(), state="disabled")
                 else:
-                    self.buttons[i].config(text="")
+                    self.buttons[i].config(text="", state="normal")
         # Check for turn or game over
         if "Your Move" in data:
             self.my_turn = True
+            # Enable only empty buttons
+            for i in range(9):
+                if self.buttons[i]['text'] == "":
+                    self.buttons[i].config(state="normal")
         else:
             self.my_turn = False
+            # Disable all buttons
+            for btn in self.buttons:
+                btn.config(state="disabled")
         if result_message:
             messagebox.showinfo("Game Over", result_message)
             self.root.destroy()
