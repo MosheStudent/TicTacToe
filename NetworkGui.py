@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 import threading
 from TicTacToeClient import TicTacToeClient
+from cypher import encrypt, decrypt
 
 class NetworkTicTacToeGUI:
     def __init__(self, root, server_ip):
@@ -9,12 +10,7 @@ class NetworkTicTacToeGUI:
         self.root.title("Tic Tac Toe (Network)")
         self.buttons = []
         self.my_turn = False
-        try:
-            self.client = TicTacToeClient(server_ip)
-        except Exception as e:
-            messagebox.showerror("Connection Error", str(e))
-            root.destroy()
-            return
+        self.client = TicTacToeClient(server_ip)
         self.create_widgets()
         threading.Thread(target=self.listen_to_server, daemon=True).start()
 
@@ -27,31 +23,27 @@ class NetworkTicTacToeGUI:
 
     def send_move(self, idx):
         if self.my_turn and self.buttons[idx]['text'] == "":
-            try:
-                self.client.send(str(idx+1))
-                self.my_turn = False
-            except Exception as e:
-                messagebox.showerror("Send Error", str(e))
-                self.root.destroy()
+            self.client.client_socket.send(bytes(encrypt(str(idx+1)), "utf-8"))
+            self.my_turn = False
 
     def listen_to_server(self):
         game_over = False
         while True:
             try:
-                data = self.client.receive()
+                data = self.client.client_socket.recv(1024).decode()
                 if not data:
                     if game_over:
                         break
                     continue
+                data = decrypt(data)
                 if ("Wins" in data or "draw" in data or "Draw" in data) and not game_over:
                     game_over = True
                 self.root.after(0, self.update_board, data)
-            except Exception as e:
-                messagebox.showerror("Connection Lost", str(e))
-                self.root.destroy()
+            except Exception:
                 break
 
     def update_board(self, data):
+        # Parse board state from server message
         lines = data.strip().split('\n')
         board = []
         result_message = None
@@ -64,19 +56,26 @@ class NetworkTicTacToeGUI:
         if len(board) == 9:
             for i in range(9):
                 if board[i] in ["x", "o"]:
-                    self.buttons[i].config(text=board[i].upper(), state="disabled")
+                    self.buttons[i].config(text=board[i].upper())
                 else:
-                    self.buttons[i].config(text="", state="disabled")
+                    self.buttons[i].config(text="")
+        # Check for turn or game over
         if "Your Move" in data:
             self.my_turn = True
-            for i in range(9):
-                if self.buttons[i]['text'] == "":
-                    self.buttons[i].config(state="normal")
         else:
             self.my_turn = False
         if result_message:
             messagebox.showinfo("Game Over", result_message)
             self.root.destroy()
+
+    def reset_board(self):
+        # Clear the buttons
+        for btn in self.buttons:
+            btn.config(text="")
+        self.my_turn = False
+        # Optionally, reconnect to the server for a new game
+        # Or, you can close and reopen the window, or prompt for replay
+        # For now, just wait for the server to pair you again
 
 if __name__ == "__main__":
     root = tk.Tk()

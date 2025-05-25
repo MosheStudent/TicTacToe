@@ -1,41 +1,20 @@
 import socket
-from cypher import generate_keys, encrypt, decrypt
+from cypher import encrypt, decrypt
 
 class TicTacToeClient:
     def __init__(self, server_ip):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.client_socket.connect((server_ip, 12345))
-        except Exception as e:
-            raise ConnectionError(f"Could not connect to server: {e}")
-        self.private_key, self.public_key = generate_keys()
-        self.client_socket.send(self.public_key)
-        self.server_public_key = self.client_socket.recv(4096)
-
-    def send(self, text):
-        try:
-            self.client_socket.send(bytes(encrypt(text, self.server_public_key), "utf-8"))
-        except Exception as e:
-            raise ConnectionError(f"Send failed: {e}")
-
-    def receive(self):
-        try:
-            data = self.client_socket.recv(4096).decode()
-            if not data:
-                raise ConnectionError("Connection closed by server.")
-            return decrypt(data, self.private_key)
-        except Exception as e:
-            raise ConnectionError(f"Receive failed: {e}")
+        self.client_socket.connect((server_ip, 12345))
 
     def start(self):
         while True:
-            board_state = self.receive()
+            board_state = decrypt(self.client_socket.recv(1024).decode())
             print(board_state)
 
             if "wins" in board_state or "draw" in board_state:
                 break
 
             move = input("Enter your move (1-9): ")
-            self.send(move)
+            self.client_socket.send(bytes(encrypt(move), "utf-8"))
 
 
