@@ -15,17 +15,11 @@ class TicTacToeClient:
         # Receive server's public key
         self.server_public_key = self.client_socket.recv(4096)
 
-    def start(self):
-        while True:
-            # Receive and decrypt message using our private key
-            board_state = decrypt(self.client_socket.recv(4096).decode(), self.private_key)
-            print(board_state)
+    def send(self, text):
+        self.client_socket.send(bytes(encrypt(text, self.server_public_key), "utf-8"))
 
-            if "wins" in board_state or "draw" in board_state:
-                break
-
-            move = input("Enter your move (1-9): ")
-            # Encrypt move with server's public key
-            self.client_socket.send(bytes(encrypt(move, self.server_public_key), "utf-8"))
+    def receive(self):
+        data = self.client_socket.recv(4096).decode()
+        return decrypt(data, self.private_key)
 
 

@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 import threading
 from TicTacToeClient import TicTacToeClient
-from cypher import generate_keys, encrypt, decrypt
 
 class NetworkTicTacToeGUI:
     def __init__(self, root, server_ip):
@@ -10,14 +9,7 @@ class NetworkTicTacToeGUI:
         self.root.title("Tic Tac Toe (Network)")
         self.buttons = []
         self.my_turn = False
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect((server_ip, 12345))
-
-        # Generate key pair
-        self.private_key, self.public_key = generate_keys()
-        self.client_socket.send(self.public_key)
-        self.server_public_key = self.client_socket.recv(4096)
-
+        self.client = TicTacToeClient(server_ip)
         self.create_widgets()
         threading.Thread(target=self.listen_to_server, daemon=True).start()
 
@@ -30,19 +22,18 @@ class NetworkTicTacToeGUI:
 
     def send_move(self, idx):
         if self.my_turn and self.buttons[idx]['text'] == "":
-            self.client_socket.send(bytes(encrypt(str(idx+1), self.server_public_key), "utf-8"))
+            self.client.send(str(idx+1))
             self.my_turn = False
 
     def listen_to_server(self):
         game_over = False
         while True:
             try:
-                data = self.client_socket.recv(4096).decode()
+                data = self.client.receive()
                 if not data:
                     if game_over:
                         break
                     continue
-                data = decrypt(data, self.private_key)
                 if ("Wins" in data or "draw" in data or "Draw" in data) and not game_over:
                     game_over = True
                 self.root.after(0, self.update_board, data)
@@ -88,5 +79,9 @@ if __name__ == "__main__":
     root = tk.Tk()
     server_ip = simpledialog.askstring("Server IP", "Enter server IP address:", parent=root)
     if server_ip:
-        app = NetworkTicTacToeGUI(root, server_ip)
-        root.mainloop()
+        try:
+            app = NetworkTicTacToeGUI(root, server_ip)
+            root.mainloop()
+        except Exception as e:
+            messagebox.showerror("Connection Error", f"Could not connect to server:\n{e}")
+            root.destroy()
