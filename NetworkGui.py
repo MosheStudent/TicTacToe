@@ -46,9 +46,12 @@ class NetworkTicTacToeGUI:
         # Parse board state from server message
         lines = data.strip().split('\n')
         board = []
+        result_message = None
         for line in lines:
             if "|" in line:
                 board.extend([cell.strip() for cell in line.split("|")])
+            elif "Wins" in line or "draw" in line or "Draw" in line:
+                result_message = line.strip()
         # Update buttons
         if len(board) == 9:
             for i in range(9):
@@ -61,9 +64,9 @@ class NetworkTicTacToeGUI:
             self.my_turn = True
         else:
             self.my_turn = False
-        if "Wins" in data or "draw" in data or "Draw" in data:
-            messagebox.showinfo("Game Over", data)
-            self.reset_board()
+        if result_message:
+            messagebox.showinfo("Game Over", result_message)
+            self.root.destroy()
 
     def reset_board(self):
         # Clear the buttons
