@@ -27,12 +27,17 @@ class NetworkTicTacToeGUI:
             self.my_turn = False
 
     def listen_to_server(self):
+        game_over = False
         while True:
             try:
                 data = self.client.client_socket.recv(1024).decode()
                 if not data:
-                    break
+                    if game_over:
+                        break
+                    continue
                 data = decrypt(data)
+                if ("Wins" in data or "draw" in data or "Draw" in data) and not game_over:
+                    game_over = True
                 self.root.after(0, self.update_board, data)
             except Exception:
                 break
