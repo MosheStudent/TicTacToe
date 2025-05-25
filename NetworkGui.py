@@ -58,7 +58,16 @@ class NetworkTicTacToeGUI:
             self.my_turn = False
         if "Wins" in data or "draw" in data or "Draw" in data:
             messagebox.showinfo("Game Over", data)
-            self.root.quit()
+            self.reset_board()
+
+    def reset_board(self):
+        # Clear the buttons
+        for btn in self.buttons:
+            btn.config(text="")
+        self.my_turn = False
+        # Optionally, reconnect to the server for a new game
+        # Or, you can close and reopen the window, or prompt for replay
+        # For now, just wait for the server to pair you again
 
 if __name__ == "__main__":
     root = tk.Tk()
