@@ -1,5 +1,6 @@
 from Board import Board
 from cypher import encrypt, decrypt
+import datetime
 
 class GameRoom:
     def __init__(self, player1_socket, player2_socket):
@@ -48,4 +49,14 @@ class GameRoom:
             else:
                 self.current_player = (self.current_player + 1) % 2
 
+        # After the game is over, log the game
+        try:
+            log_game(self.players[0][0].getpeername()[0], self.players[1][0].getpeername()[0])
+        except Exception as e:
+            print(f"Error logging game: {e}")
+
         # Optionally, close sockets here if you want to end the session
+
+def log_game(player1_addr, player2_addr):
+    with open("games_log.txt", "a") as f:
+        f.write(f"{datetime.datetime.now()} - {player1_addr} vs {player2_addr}\n")
