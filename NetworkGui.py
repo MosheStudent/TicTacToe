@@ -10,7 +10,16 @@ class NetworkTicTacToeGUI:
         self.root.title("Tic Tac Toe (Network)")
         self.buttons = []
         self.my_turn = False
-        self.client = TicTacToeClient(server_ip)
+
+
+        try:
+            self.client = TicTacToeClient(server_ip)
+        except:
+            messagebox.showerror("Connection Error", "Could not connect to the server. Please check the IP address and try again.")
+            self.root.destroy()
+            return
+        
+        
         self.create_widgets()
         threading.Thread(target=self.listen_to_server, daemon=True).start()
 

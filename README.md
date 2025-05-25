@@ -1,6 +1,6 @@
 # Network Tic Tac Toe
 
-A Python-based network Tic Tac Toe game supporting multiple simultaneous games, with a graphical interface for both players. All communication is encrypted using AES.
+A Python-based network Tic Tac Toe game supporting multiple simultaneous games, with a graphical interface for both players. All communication is encrypted using a simple Caesar cipher.
 
 ---
 

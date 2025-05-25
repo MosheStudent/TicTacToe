@@ -1,9 +1,10 @@
 import base64
-from Cryptodome.Cipher import AES
-from Cryptodome.Random import get_random_bytes
-from  Cryptodome.Util.Padding import pad, unpad
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from  Crypto.Util.Padding import pad, unpad
 
-KEY = get_random_bytes(16)          # load this from secure storage in real life
+
+KEY = get_random_bytes(16) # load this from secure storage in real life
 
 def encrypt(msg: str) -> str:
     iv   = get_random_bytes(16)

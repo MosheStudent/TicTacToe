@@ -4,6 +4,7 @@ from cypher import encrypt, decrypt
 class TicTacToeClient:
     def __init__(self, server_ip):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
         self.client_socket.connect((server_ip, 12345))
 
     def start(self):
