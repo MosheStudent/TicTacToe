@@ -31,7 +31,7 @@ class TicTacToeServer:
 
             print(f"Player connected form address {address}")
 
-            threading.Thread(target=self.handle_client, args=(client_socket)).start()
+            threading.Thread(target=self.handle_client, args=(client_socket,)).start()
 
 if __name__ == "__main__":
     server = TicTacToeServer()

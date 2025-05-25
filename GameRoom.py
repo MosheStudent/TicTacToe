@@ -1,4 +1,5 @@
 from Board import Board
+from cypher import encrypt, decrypt
 
 class GameRoom:
     def __init__(self, player1_socket, player2_socket):
@@ -10,7 +11,7 @@ class GameRoom:
         board_state = self.board.display()
 
         for player_socket, _ in self.players:
-            player_socket.send(bytes(board_state, "utf-8"))
+            player_socket.send(bytes(encrypt(board_state), "utf-8"))
 
     def handle_game(self):
         game_over = False
@@ -21,8 +22,8 @@ class GameRoom:
 
             self.send_board_to_players()
 
-            current_socket.send(bytes("Your Move: ", "utf-8"))
-            move = current_socket.recv(1024).decode("utf-8")
+            current_socket.send(bytes(encrypt("Your Move: "), "utf-8"))
+            move = decrypt(current_socket.recv(1024).decode("utf-8"))
 
             #validate move
             if move.isdigit() and int(move) in range(1,10):
@@ -53,4 +54,3 @@ class GameRoom:
                 
             else:
                 current_socket.send(bytes("Invalid move, try again", "utf-8"))
-                
