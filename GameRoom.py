@@ -1,31 +1,17 @@
 from Board import Board
 from cypher import encrypt, decrypt
 
-
-def recv_message(sock):
-    buffer = b""
-    while not buffer.endswith(b"\n"):
-        part = sock.recv(1024)
-        if not part:
-            raise ConnectionError("Socket closed")
-        buffer += part
-    return decrypt(buffer.strip().decode("utf-8"))
-
-
-def send_message(sock, msg: str):
-    sock.send((encrypt(msg) + "\n").encode("utf-8"))
-
-
 class GameRoom:
     def __init__(self, player1_socket, player2_socket):
         self.board = Board()
-        self.players = [(player1_socket, "x"), (player2_socket, "o")]
+        self.players = [(player1_socket, "x"), (player2_socket, "o")]   
         self.current_player = 0
 
     def send_board_to_players(self):
         board_state = self.board.display()
+
         for player_socket, _ in self.players:
-            send_message(player_socket, board_state)
+            player_socket.send(encrypt(board_state))
 
     def handle_game(self):
         game_over = False
@@ -35,10 +21,11 @@ class GameRoom:
             opponent_socket, _ = self.players[(self.current_player + 1) % 2]
 
             self.send_board_to_players()
-            send_message(current_socket, "Your Move: ")
+            current_socket.send(encrypt("Your Move: "))
+            move = decrypt(current_socket.recv(1024))
 
+            # Validate move
             try:
-                move = recv_message(current_socket)
                 move = int(move) - 1
                 if self.board.board[move] not in ["x", "o"]:
                     self.board.update(move, current_marker)
@@ -47,22 +34,18 @@ class GameRoom:
             except Exception:
                 continue  # Invalid input, ask again
 
+            # Check for win/draw
             if self.board.is_winner(current_marker):
                 msg = f"Player {current_marker.upper()} Wins!"
                 for player_socket, _ in self.players:
-                    send_message(player_socket, self.board.display() + "\n" + msg)
+                    player_socket.send(encrypt(self.board.display() + "\n" + msg))
                 game_over = True
             elif self.board.is_draw():
                 msg = "It's a draw!"
                 for player_socket, _ in self.players:
-                    send_message(player_socket, self.board.display() + "\n" + msg)
+                    player_socket.send(encrypt(self.board.display() + "\n" + msg))
                 game_over = True
             else:
                 self.current_player = (self.current_player + 1) % 2
 
-        with open("game_log.txt", "a") as log_file:
-            log_file.write(self.board.display() + "\n")
-            if game_over:
-                log_file.write(msg + "\n")
-            log_file.write("-" * 20 + "\n")
-        print("Game over. Log saved to game_log.txt")
+        # Optionally, close sockets here if you want to end the session
